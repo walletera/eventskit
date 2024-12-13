@@ -8,7 +8,12 @@ import (
     "github.com/EventStore/EventStore-Client-Go/v4/esdb"
     "github.com/walletera/eventskit/events"
     "github.com/walletera/eventskit/eventsourcing"
+    "github.com/walletera/werrors"
 )
+
+// TODO check if there is a way to read all events from a stream
+// maybe reading page by page
+const readEventsMaxCount = 1000000
 
 type DB struct {
     client *esdb.Client
@@ -20,12 +25,12 @@ func NewDB(client *esdb.Client) *DB {
     }
 }
 
-func (db *DB) AppendEvents(ctx context.Context, streamName string, events ...events.EventData) error {
+func (db *DB) AppendEvents(ctx context.Context, streamName string, expectedAggregateVersion eventsourcing.ExpectedAggregateVersion, events ...events.EventData) werrors.WError {
     var eventsData []esdb.EventData
     for _, event := range events {
         data, err := event.Serialize()
         if err != nil {
-            return err
+            return werrors.NewNonRetryableInternalError(err.Error())
         }
         eventData := esdb.EventData{
             ContentType: esdb.ContentTypeJson,
@@ -34,26 +39,38 @@ func (db *DB) AppendEvents(ctx context.Context, streamName string, events ...eve
         }
         eventsData = append(eventsData, eventData)
     }
-    _, err := db.client.AppendToStream(ctx, streamName, esdb.AppendToStreamOptions{}, eventsData...)
+    var expectedRevision esdb.ExpectedRevision
+    if expectedAggregateVersion.IsNew {
+        expectedRevision = esdb.NoStream{}
+    } else {
+        expectedRevision = esdb.Revision(expectedAggregateVersion.Version)
+    }
+    opts := esdb.AppendToStreamOptions{
+        ExpectedRevision: expectedRevision,
+        Authenticated:    nil,
+        Deadline:         nil,
+        RequiresLeader:   false,
+    }
+    _, err := db.client.AppendToStream(ctx, streamName, opts, eventsData...)
     if err != nil {
-        return err
+        return mapAppendErrorToWalleteraError(err, expectedAggregateVersion)
     }
     return nil
 }
 
-func (db *DB) ReadEvents(ctx context.Context, streamName string) ([]eventsourcing.RawEvent, error) {
+func (db *DB) ReadEvents(ctx context.Context, streamName string) ([]eventsourcing.RetrievedEvent, werrors.WError) {
     stream, err := db.client.ReadStream(ctx, streamName, esdb.ReadStreamOptions{
         Direction: esdb.Forwards,
         From:      esdb.Start{},
-    }, 100)
+    }, readEventsMaxCount)
 
     if err != nil {
-        return nil, err
+        return nil, mapReadErrorToWalleteraError(err)
     }
 
     defer stream.Close()
 
-    var rawEvents []eventsourcing.RawEvent
+    var rawEvents []eventsourcing.RetrievedEvent
     for {
         event, err := stream.Recv()
 
@@ -62,11 +79,40 @@ func (db *DB) ReadEvents(ctx context.Context, streamName string) ([]eventsourcin
         }
 
         if err != nil {
-            return nil, err
+            return nil, mapReadErrorToWalleteraError(err)
         }
 
-        rawEvents = append(rawEvents, event.Event.Data)
+        rawEvents = append(rawEvents, eventsourcing.RetrievedEvent{
+            RawEvent:         event.Event.Data,
+            AggregateVersion: event.OriginalStreamRevision().Value,
+        })
     }
 
     return rawEvents, nil
+}
+
+func mapAppendErrorToWalleteraError(err error, version eventsourcing.ExpectedAggregateVersion) werrors.WError {
+    esdbError, _ := esdb.FromError(err)
+    switch esdbError.Code() {
+    case esdb.ErrorCodeWrongExpectedVersion:
+        if version.IsNew {
+            return werrors.NewAggregateAlreadyExistError(err.Error())
+        } else {
+            return werrors.NewWrongAggregateVersionError(err.Error())
+        }
+    case esdb.ErrorCodeResourceNotFound:
+        return werrors.NewAggregateNotFoundError(err.Error())
+    default:
+        return werrors.NewRetryableInternalError(err.Error())
+    }
+}
+
+func mapReadErrorToWalleteraError(err error) werrors.WError {
+    esdbError, _ := esdb.FromError(err)
+    switch esdbError.Code() {
+    case esdb.ErrorCodeResourceNotFound:
+        return werrors.NewAggregateNotFoundError(err.Error())
+    default:
+        return werrors.NewRetryableInternalError(err.Error())
+    }
 }
