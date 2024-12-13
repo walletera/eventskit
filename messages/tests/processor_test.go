@@ -9,12 +9,12 @@ import (
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/mock"
     "github.com/stretchr/testify/require"
-    "github.com/walletera/message-processor/errors"
-    "github.com/walletera/message-processor/fake"
-    "github.com/walletera/message-processor/messages"
-    eventsmock "github.com/walletera/message-processor/mocks/github.com/walletera/message-processor/events"
-    fakemock "github.com/walletera/message-processor/mocks/github.com/walletera/message-processor/fake"
-    messagesmock "github.com/walletera/message-processor/mocks/github.com/walletera/message-processor/messages"
+    "github.com/walletera/eventskit/errors"
+    "github.com/walletera/eventskit/fake"
+    "github.com/walletera/eventskit/messages"
+    eventsmock "github.com/walletera/eventskit/mocks/github.com/walletera/eventskit/events"
+    fakemock "github.com/walletera/eventskit/mocks/github.com/walletera/eventskit/fake"
+    messagesmock "github.com/walletera/eventskit/mocks/github.com/walletera/eventskit/messages"
 )
 
 func TestMessageProcessor(t *testing.T) {

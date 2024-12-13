@@ -5,8 +5,8 @@ import (
     "encoding/json"
     "fmt"
 
-    "github.com/walletera/message-processor/errors"
-    "github.com/walletera/message-processor/events"
+    "github.com/walletera/eventskit/errors"
+    "github.com/walletera/eventskit/events"
 )
 
 var _ events.Event[EventsHandler] = WithdrawalCreatedEvent{}

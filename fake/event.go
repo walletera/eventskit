@@ -4,8 +4,8 @@ import (
     "context"
     "encoding/json"
 
-    "github.com/walletera/message-processor/errors"
-    "github.com/walletera/message-processor/events"
+    "github.com/walletera/eventskit/errors"
+    "github.com/walletera/eventskit/events"
 )
 
 var _ events.Event[EventHandler] = Event{}

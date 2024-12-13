@@ -12,8 +12,8 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.com/walletera/message-processor/errors"
-    "github.com/walletera/message-processor/messages"
+    "github.com/walletera/eventskit/errors"
+    "github.com/walletera/eventskit/messages"
 )
 
 const (

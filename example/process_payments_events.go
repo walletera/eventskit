@@ -4,9 +4,9 @@ import (
     "context"
     "log"
 
-    "github.com/walletera/message-processor/errors"
-    "github.com/walletera/message-processor/messages"
-    "github.com/walletera/message-processor/payments"
+    "github.com/walletera/eventskit/errors"
+    "github.com/walletera/eventskit/messages"
+    "github.com/walletera/eventskit/payments"
 )
 
 func main() {

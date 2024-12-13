@@ -3,14 +3,14 @@ mockname: "Mock{{.InterfaceName}}"
 filename: "mock_{{.InterfaceNameSnake}}.go"
 all: True
 packages:
-  github.com/walletera/message-processor/events:
+  github.com/walletera/eventskit/events:
     interfaces:
       Handler:
       Deserializer:
-  github.com/walletera/message-processor/fake:
+  github.com/walletera/eventskit/fake:
     interfaces:
       EventHandler:
-  github.com/walletera/message-processor/messages:
+  github.com/walletera/eventskit/messages:
       interfaces:
         Consumer:
         Acknowledger:

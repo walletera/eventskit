@@ -5,7 +5,7 @@ package events
 import (
 	context "context"
 
-	errors "github.com/walletera/message-processor/errors"
+	errors "github.com/walletera/eventskit/errors"
 
 	mock "github.com/stretchr/testify/mock"
 )

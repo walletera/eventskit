@@ -3,7 +3,7 @@ package payments
 import (
     "context"
 
-    "github.com/walletera/message-processor/errors"
+    "github.com/walletera/eventskit/errors"
 )
 
 type EventsHandler interface {

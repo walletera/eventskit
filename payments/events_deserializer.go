@@ -5,7 +5,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/walletera/message-processor/events"
+    "github.com/walletera/eventskit/events"
 )
 
 type EventsDeserializer struct {

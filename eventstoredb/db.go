@@ -6,8 +6,8 @@ import (
     "io"
 
     "github.com/EventStore/EventStore-Client-Go/v4/esdb"
-    "github.com/walletera/message-processor/events"
-    "github.com/walletera/message-processor/eventsourcing"
+    "github.com/walletera/eventskit/events"
+    "github.com/walletera/eventskit/eventsourcing"
 )
 
 type DB struct {

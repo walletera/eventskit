@@ -5,8 +5,8 @@ import (
     "errors"
     "fmt"
 
-    procerrors "github.com/walletera/message-processor/errors"
-    "github.com/walletera/message-processor/events"
+    procerrors "github.com/walletera/eventskit/errors"
+    "github.com/walletera/eventskit/events"
 )
 
 type Processor[Handler any] struct {

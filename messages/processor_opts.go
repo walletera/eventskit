@@ -3,7 +3,7 @@ package messages
 import (
     "time"
 
-    "github.com/walletera/message-processor/errors"
+    "github.com/walletera/eventskit/errors"
 )
 
 type ErrorCallback func(processingError errors.ProcessingError)

@@ -3,7 +3,7 @@ package fake
 import (
     "context"
 
-    "github.com/walletera/message-processor/errors"
+    "github.com/walletera/eventskit/errors"
 )
 
 type EventHandler interface {

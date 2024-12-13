@@ -5,8 +5,8 @@ package fake
 import (
 	context "context"
 
-	errors "github.com/walletera/message-processor/errors"
-	fake "github.com/walletera/message-processor/fake"
+	errors "github.com/walletera/eventskit/errors"
+	fake "github.com/walletera/eventskit/fake"
 
 	mock "github.com/stretchr/testify/mock"
 )

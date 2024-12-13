@@ -3,8 +3,8 @@ package payments
 import (
     "fmt"
 
-    "github.com/walletera/message-processor/messages"
-    "github.com/walletera/message-processor/rabbitmq"
+    "github.com/walletera/eventskit/messages"
+    "github.com/walletera/eventskit/rabbitmq"
 )
 
 const (

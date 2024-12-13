@@ -1,4 +1,4 @@
-module github.com/walletera/message-processor
+module github.com/walletera/eventskit
 
 go 1.21
 

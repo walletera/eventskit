@@ -3,7 +3,7 @@ package eventsourcing
 import (
     "context"
 
-    "github.com/walletera/message-processor/events"
+    "github.com/walletera/eventskit/events"
 )
 
 type RawEvent []byte

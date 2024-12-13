@@ -12,9 +12,9 @@ import (
     "time"
 
     "github.com/stretchr/testify/assert"
-    "github.com/walletera/message-processor/events"
-    "github.com/walletera/message-processor/fake"
-    "github.com/walletera/message-processor/messages"
+    "github.com/walletera/eventskit/events"
+    "github.com/walletera/eventskit/fake"
+    "github.com/walletera/eventskit/messages"
 
     "github.com/testcontainers/testcontainers-go"
     "github.com/testcontainers/testcontainers-go/wait"

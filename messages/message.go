@@ -1,7 +1,7 @@
 package messages
 
 import (
-    "github.com/walletera/message-processor/errors"
+    "github.com/walletera/eventskit/errors"
 )
 
 type NackOpts struct {
