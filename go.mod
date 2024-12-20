@@ -7,7 +7,7 @@ require (
 	github.com/rabbitmq/amqp091-go v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.30.0
-	github.com/walletera/werrors v0.0.2
+	github.com/walletera/werrors v0.0.3
 )
 
 require (

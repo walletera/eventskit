@@ -96,12 +96,12 @@ func mapAppendErrorToWalleteraError(err error, version eventsourcing.ExpectedAgg
     switch esdbError.Code() {
     case esdb.ErrorCodeWrongExpectedVersion:
         if version.IsNew {
-            return werrors.NewAggregateAlreadyExistError(err.Error())
+            return werrors.NewResourceAlreadyExistError(err.Error())
         } else {
-            return werrors.NewWrongAggregateVersionError(err.Error())
+            return werrors.NewWrongResourceVersionError(err.Error())
         }
     case esdb.ErrorCodeResourceNotFound:
-        return werrors.NewAggregateNotFoundError(err.Error())
+        return werrors.NewResourceNotFoundError(err.Error())
     default:
         return werrors.NewRetryableInternalError(err.Error())
     }
@@ -111,7 +111,7 @@ func mapReadErrorToWalleteraError(err error) werrors.WError {
     esdbError, _ := esdb.FromError(err)
     switch esdbError.Code() {
     case esdb.ErrorCodeResourceNotFound:
-        return werrors.NewAggregateNotFoundError(err.Error())
+        return werrors.NewResourceNotFoundError(err.Error())
     default:
         return werrors.NewRetryableInternalError(err.Error())
     }

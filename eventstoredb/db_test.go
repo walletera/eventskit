@@ -44,7 +44,7 @@ func TestAppendReadEvents(t *testing.T) {
     // try to append again specifying eventsourcing.ExpectedAggregateVersion{IsNew: true}
     // should result in a ResourceAlreadyExist error
     werr = db.AppendEvents(ctx, "testStream", eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
-    require.Equal(t, werrors.AggregateAlreadyExistErrorCode, werr.Code())
+    require.Equal(t, werrors.ResourceAlreadyExistErrorCode, werr.Code())
     // event can be read
     retrievedEvents, err := db.ReadEvents(ctx, "testStream")
     require.NoError(t, err)
@@ -56,7 +56,7 @@ func TestAppendReadEvents(t *testing.T) {
     require.NoError(t, werr)
     // try to append new event with wrong version result in a werrors.WrongAggregateVersionErrorCode error
     werr = db.AppendEvents(ctx, "testStream", eventsourcing.ExpectedAggregateVersion{Version: 0}, eventDataMock)
-    require.Equal(t, werrors.WrongAggregateVersionErrorCode, werr.Code())
+    require.Equal(t, werrors.WrongResourceVersionErrorCode, werr.Code())
 }
 
 func startEventStoreDBContainer(ctx context.Context) (func() error, error) {
