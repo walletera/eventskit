@@ -51,10 +51,10 @@ func TestAppendReadEvents(t *testing.T) {
     require.Len(t, retrievedEvents, 1)
     require.Equal(t, rawEvent, retrievedEvents[0].RawEvent)
     require.Equal(t, uint64(0), retrievedEvents[0].AggregateVersion)
-    // new event can be appended to the stream with
+    // new event can be appended to the stream with correct eventsourcing.ExpectedAggregateVersion
     werr = db.AppendEvents(ctx, "testStream", eventsourcing.ExpectedAggregateVersion{Version: 0}, eventDataMock)
     require.NoError(t, werr)
-    // try to append new event with wrong version result in a werrors.WrongResourceVersionErrorCode error
+    // try to append new event with wrong version result in a werrors.WrongAggregateVersionErrorCode error
     werr = db.AppendEvents(ctx, "testStream", eventsourcing.ExpectedAggregateVersion{Version: 0}, eventDataMock)
     require.Equal(t, werrors.WrongAggregateVersionErrorCode, werr.Code())
 }
