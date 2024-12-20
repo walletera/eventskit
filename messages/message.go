@@ -1,12 +1,12 @@
 package messages
 
 import (
-    "github.com/walletera/eventskit/errors"
+    "github.com/walletera/werrors"
 )
 
 type NackOpts struct {
     Requeue      bool
-    ErrorCode    errors.ErrorCode
+    ErrorCode    werrors.ErrorCode
     ErrorMessage string
 }
 

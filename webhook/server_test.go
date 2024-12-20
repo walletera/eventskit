@@ -12,8 +12,8 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.com/walletera/eventskit/errors"
     "github.com/walletera/eventskit/messages"
+    "github.com/walletera/werrors"
 )
 
 const (
@@ -83,13 +83,13 @@ func executeTest(t *testing.T, httpMethod string, requestBody []byte, expectedSt
             case payloadFailedWithUnprocessableMessage:
                 err = msg.Acknowledger().Nack(messages.NackOpts{
                     Requeue:      false,
-                    ErrorCode:    errors.UnprocessableMessageErrorCode,
+                    ErrorCode:    werrors.UnprocessableMessageErrorCode,
                     ErrorMessage: "",
                 })
             case payloadFailedWithInternalError:
                 err = msg.Acknowledger().Nack(messages.NackOpts{
                     Requeue:      false,
-                    ErrorCode:    errors.InternalErrorCode,
+                    ErrorCode:    werrors.InternalErrorCode,
                     ErrorMessage: "",
                 })
             }

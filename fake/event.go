@@ -4,8 +4,8 @@ import (
     "context"
     "encoding/json"
 
-    "github.com/walletera/eventskit/errors"
     "github.com/walletera/eventskit/events"
+    "github.com/walletera/werrors"
 )
 
 var _ events.Event[EventHandler] = Event{}
@@ -42,6 +42,6 @@ func (f Event) Serialize() ([]byte, error) {
     return serialized, nil
 }
 
-func (f Event) Accept(ctx context.Context, visitor EventHandler) errors.ProcessingError {
+func (f Event) Accept(ctx context.Context, visitor EventHandler) werrors.WError {
     return visitor.HandleFakeEvent(ctx, f)
 }

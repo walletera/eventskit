@@ -3,11 +3,11 @@ package events
 import (
     "context"
 
-    "github.com/walletera/eventskit/errors"
+    "github.com/walletera/werrors"
 )
 
 type Event[Handler any] interface {
     EventData
 
-    Accept(ctx context.Context, Handler Handler) errors.ProcessingError
+    Accept(ctx context.Context, Handler Handler) werrors.WError
 }
