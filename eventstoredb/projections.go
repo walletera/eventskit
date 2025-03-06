@@ -6,6 +6,8 @@ import (
     "net/http"
     "net/url"
     "strings"
+
+    "github.com/hashicorp/go-retryablehttp"
 )
 
 const (
@@ -56,7 +58,9 @@ func SetESDBByCategoryProjectionSeparator(ctx context.Context, esdbUrl string) e
     }
 
     req.Header.Set("Content-Type", "application/json; charset=utf-8")
-    resp, err := http.DefaultClient.Do(req)
+
+    retryClient := retryablehttp.NewClient()
+    resp, err := retryClient.StandardClient().Do(req)
     if err != nil {
         return fmt.Errorf("failed creating request to update byCategory projection separator: %w", err)
     }
