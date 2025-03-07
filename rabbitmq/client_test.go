@@ -65,7 +65,24 @@ func TestRabbitMQClientWithDefaults(t *testing.T) {
         return
     }
 
-    waitForMessageWithTimeout(t, event, messagesCh, 5*time.Second)
+    receivedMessage, err := waitForMessageWithTimeout(t, messagesCh, 5*time.Second)
+    if err != nil {
+        t.Error(err.Error())
+        return
+    }
+
+    var unmarshalledEvent fake.Event
+    err = json.Unmarshal(receivedMessage.Payload(), &unmarshalledEvent)
+    if err != nil {
+        t.Errorf("failed unmarshalling received message: %s", err.Error())
+        return
+    }
+    assert.Equal(t, event, unmarshalledEvent)
+
+    err = receivedMessage.Acknowledger().Ack()
+    if err != nil {
+        t.Errorf("failed acknowledging received message: %s", err.Error())
+    }
 }
 
 func TestRabbitMQClientWithOptions(t *testing.T) {
@@ -125,7 +142,24 @@ func TestRabbitMQClientWithOptions(t *testing.T) {
         return
     }
 
-    waitForMessageWithTimeout(t, event, messagesCh, 5*time.Second)
+    receivedMessage, err := waitForMessageWithTimeout(t, messagesCh, 5*time.Second)
+    if err != nil {
+        t.Error(err.Error())
+        return
+    }
+
+    var unmarshalledEvent fake.Event
+    err = json.Unmarshal(receivedMessage.Payload(), &unmarshalledEvent)
+    if err != nil {
+        t.Errorf("failed unmarshalling received message: %s", err.Error())
+        return
+    }
+    assert.Equal(t, event, unmarshalledEvent)
+
+    err = receivedMessage.Acknowledger().Ack()
+    if err != nil {
+        t.Errorf("failed acknowledging received message: %s", err.Error())
+    }
 }
 
 func TestRabbitMQClientWithOptionsButEmptyExchangeType(t *testing.T) {
@@ -208,6 +242,87 @@ func TestRabbitMQClientWithLoad(t *testing.T) {
     waitForNMessagesWithTimeout(t, n, messagesCh, 5*time.Second)
 }
 
+func TestRabbitMQClientNackRetries(t *testing.T) {
+    ctx := context.Background()
+    stopRabbitMQ := runRabbitMQ(ctx)
+
+    defer stopRabbitMQ(ctx)
+
+    const testRoutingKey = "test.routing.key"
+
+    consumer, err := NewClient(
+        WithQueueName("test-queue"),
+        WithExchangeName("test-exchange"),
+        WithExchangeType(ExchangeTypeTopic),
+        WithConsumerRoutingKeys(testRoutingKey),
+    )
+    if err != nil {
+        t.Errorf("error creating Client: %s", err.Error())
+        return
+    }
+    defer consumer.Close()
+
+    messagesCh, err := consumer.Consume()
+    if err != nil {
+        t.Errorf("error executing consumer.Consumer: %s", err.Error())
+        return
+    }
+
+    randomNum := rand.New(rand.NewSource(time.Now().Unix())).Int63()
+    data := fmt.Sprintf("a data with a random number %d", randomNum)
+    event := fake.Event{
+        FakeID:              "FakeID",
+        FakeType:            "FakeType",
+        FakeCorrelationID:   "FakeCorrelationID",
+        FakeDataContentType: "FakeDataContentType",
+        FakeData:            data,
+    }
+
+    publisher, err := NewClient(
+        WithQueueName("test-queue"),
+        WithExchangeName("test-exchange"),
+        WithExchangeType(ExchangeTypeTopic),
+        WithConsumerRoutingKeys(testRoutingKey),
+    )
+    if err != nil {
+        t.Error(err.Error())
+        return
+    }
+    defer publisher.Close()
+
+    err = publisher.Publish(ctx, event, events.RoutingInfo{
+        Topic:      "test-exchange",
+        RoutingKey: testRoutingKey,
+    })
+    if err != nil {
+        t.Errorf("error publishing message: %s", err.Error())
+        return
+    }
+
+    receivedMessage, err := waitForMessageWithTimeout(t, messagesCh, 5*time.Second)
+    if err != nil {
+        t.Error(err.Error())
+        return
+    }
+
+    err = receivedMessage.Acknowledger().Nack(messages.NackOpts{
+        Requeue:      true,
+        MaxRetries:   1,
+        ErrorCode:    0,
+        ErrorMessage: "",
+    })
+    if err != nil {
+        t.Errorf("failed nacking received message: %s", err.Error())
+        return
+    }
+
+    _, err = waitForMessageWithTimeout(t, messagesCh, 5*time.Second)
+    if err != nil {
+        t.Errorf("error was not retried: %s", err.Error())
+        return
+    }
+}
+
 func runRabbitMQ(ctx context.Context) func(ctx context.Context) {
     req := testcontainers.ContainerRequest{
         Image: "rabbitmq:3.13.3-management",
@@ -235,24 +350,19 @@ func runRabbitMQ(ctx context.Context) func(ctx context.Context) {
     }
 }
 
-func waitForMessageWithTimeout(t *testing.T, event events.EventData, messagesCh <-chan messages.Message, duration time.Duration) {
+func waitForMessageWithTimeout(t *testing.T, messagesCh <-chan messages.Message, duration time.Duration) (messages.Message, error) {
     timeout := time.After(duration)
     select {
     case receivedMessage, ok := <-messagesCh:
         if !ok {
             t.Errorf("channel closed")
-            return
+            return messages.Message{}, nil
         }
-        var unmarshalledEvent fake.Event
-        err := json.Unmarshal(receivedMessage.Payload(), &unmarshalledEvent)
-        if err != nil {
-            t.Errorf("failed unmarshalling received message: %s", err.Error())
-            return
-        }
-        assert.Equal(t, event, unmarshalledEvent)
+        return receivedMessage, nil
     case <-timeout:
-        t.Errorf("timeout waiting message")
+        return messages.Message{}, fmt.Errorf("timeout waiting message")
     }
+    return messages.Message{}, nil
 }
 
 func waitForNMessagesWithTimeout(t *testing.T, n int, messagesCh <-chan messages.Message, duration time.Duration) {

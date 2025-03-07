@@ -23,7 +23,7 @@ func (a *Acknowledger) Ack() error {
 
 func (a *Acknowledger) Nack(opts messages.NackOpts) error {
     var err error
-    if opts.Requeue && a.eventAppeared.RetryCount <= maxRetry {
+    if opts.Requeue && a.eventAppeared.RetryCount < opts.MaxRetries {
         err = a.persistentSubscription.Nack(opts.ErrorMessage, esdb.NackActionRetry, a.eventAppeared.Event)
     } else {
         err = a.persistentSubscription.Nack(opts.ErrorMessage, esdb.NackActionPark, a.eventAppeared.Event)
