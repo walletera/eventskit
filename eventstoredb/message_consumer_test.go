@@ -17,10 +17,18 @@ import (
 )
 
 func TestNackRetries(t *testing.T) {
-    ctx, _ := context.WithTimeout(context.Background(), testTimeout)
+    const streamName = "testStream"
 
     client, err := GetESDBClient("esdb://localhost:2113?tls=false")
     require.NoError(t, err)
+
+    ctx, _ := context.WithTimeout(context.Background(), testTimeout)
+
+    t.Cleanup(func() {
+        _, deleteStreamErr := client.DeleteStream(ctx, streamName, esdb.DeleteStreamOptions{})
+        require.NoError(t, deleteStreamErr)
+    })
+
     db := NewDB(client)
     eventDataMock := &events.MockEventData{}
     rawEvent := []byte(`{"thisIsA":"rawTestEvent"}`)
@@ -32,22 +40,22 @@ func TestNackRetries(t *testing.T) {
     subscriptionSettings.ResolveLinkTos = true
     subscriptionSettings.MaxRetryCount = int32(maxRetries)
 
-    err = CreatePersistentSubscription(eventStoreDBUrl, "testStream", "testGroup", subscriptionSettings)
+    err = CreatePersistentSubscription(eventStoreDBUrl, streamName, "testGroup", subscriptionSettings)
     require.NoError(t, err)
 
-    consumer, err := NewMessagesConsumer(eventStoreDBUrl, "testStream", "testGroup")
+    consumer, err := NewMessagesConsumer(eventStoreDBUrl, streamName, "testGroup")
     require.NoError(t, err)
     messagesCh, err := consumer.Consume()
     require.NoError(t, err)
 
-    info, err := db.client.GetPersistentSubscriptionInfo(ctx, "testStream", "testGroup", esdb.GetPersistentSubscriptionOptions{})
+    info, err := db.client.GetPersistentSubscriptionInfo(ctx, streamName, "testGroup", esdb.GetPersistentSubscriptionOptions{})
     require.NoError(t, err)
 
     // parked messages count is 0
     require.EqualValues(t, 0, info.Stats.ParkedMessagesCount)
 
     // event can be appended
-    werr := db.AppendEvents(ctx, "testStream", eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
+    werr := db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
     require.NoError(t, werr)
 
     msg, err := waitForMessageWithTimeout(t, messagesCh, 2*time.Second)
@@ -72,12 +80,17 @@ func TestNackRetries(t *testing.T) {
     // let's give a moment to the stats to be updated
     time.Sleep(100 * time.Millisecond)
 
-    info, err = db.client.GetPersistentSubscriptionInfo(ctx, "testStream", "testGroup", esdb.GetPersistentSubscriptionOptions{})
+    info, err = db.client.GetPersistentSubscriptionInfo(ctx, streamName, "testGroup", esdb.GetPersistentSubscriptionOptions{})
     require.NoError(t, err)
     require.EqualValues(t, 1, info.Stats.ParkedMessagesCount, "the message was not parked")
 
+    parkedEvents, err := db.ReadEvents(ctx, "$persistentsubscription-testStream::testGroup-parked")
+    require.NoError(t, err)
+    require.Len(t, parkedEvents, 1)
+    require.Equal(t, rawEvent, parkedEvents[0].RawEvent)
+
     // replay parked message
-    err = db.client.ReplayParkedMessages(ctx, "testStream", "testGroup", esdb.ReplayParkedMessagesOptions{})
+    err = db.client.ReplayParkedMessages(ctx, streamName, "testGroup", esdb.ReplayParkedMessagesOptions{})
     require.NoError(t, err)
 
     msgReplayed, err := waitForMessageWithTimeout(t, messagesCh, 2*time.Second)
@@ -87,7 +100,7 @@ func TestNackRetries(t *testing.T) {
     // let's give a moment to the stats to be updated
     time.Sleep(100 * time.Millisecond)
 
-    info, err = db.client.GetPersistentSubscriptionInfo(ctx, "testStream", "testGroup", esdb.GetPersistentSubscriptionOptions{})
+    info, err = db.client.GetPersistentSubscriptionInfo(ctx, streamName, "testGroup", esdb.GetPersistentSubscriptionOptions{})
     require.NoError(t, err)
     require.EqualValues(t, 0, info.Stats.ParkedMessagesCount, "the message is still parked")
 }
