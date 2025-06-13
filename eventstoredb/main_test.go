@@ -14,14 +14,16 @@ import (
 
 const (
     eventStoreDBPort            = "2113"
-    testTimeout                 = 10 * time.Second
-    containerStartTimeout       = 10 * time.Second
-    containerTerminationTimeout = 10 * time.Second
+    testTimeout                 = 30 * time.Second
+    containerStartTimeout       = 20 * time.Second
+    containerTerminationTimeout = 20 * time.Second
     eventStoreDBUrl             = "esdb://localhost:2113?tls=false"
 )
 
 func TestMain(m *testing.M) {
-    ctx, _ := context.WithTimeout(context.Background(), containerStartTimeout)
+    ctx, cancel := context.WithTimeout(context.Background(), containerStartTimeout)
+    defer cancel()
+
     terminateContainer, err := startEventStoreDBContainer(ctx)
     if err != nil {
         panic("error starting eventstoreDB container: " + err.Error())
