@@ -100,15 +100,21 @@ func executeTest(t *testing.T, httpMethod string, requestBody []byte, expectedSt
     }()
 
     httpReq, err := http.NewRequest(httpMethod, "http://127.0.0.1:8282/webhooks", bytes.NewReader(requestBody))
-    require.NoError(t, err)
+    if err != nil {
+        t.Errorf("failed creating request: %s", err.Error())
+        assert.NoError(t, server.Close(), "failed closing server")
+        return
+    }
 
     resp, err := http.DefaultClient.Do(httpReq)
-    require.NoError(t, err)
+    if err != nil {
+        t.Errorf("request failed: %s", err.Error())
+        assert.NoError(t, server.Close(), "failed closing server")
+        return
+    }
 
     assert.Equal(t, expectedStatusCode, resp.StatusCode)
-
-    err = server.Close()
-    require.NoError(t, err)
+    assert.NoError(t, server.Close(), "failed closing server")
 
     <-ctx.Done()
     err = ctx.Err()
@@ -116,7 +122,7 @@ func executeTest(t *testing.T, httpMethod string, requestBody []byte, expectedSt
 }
 
 func TestShutdown(t *testing.T) {
-    server := NewServer(8282, WithLogger(slog.New(slog.NewTextHandler(os.Stdout, nil))))
+    server := NewServer(8282, WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))))
     msgCh, err := server.Consume()
     require.NoError(t, err)
 
@@ -140,17 +146,30 @@ func TestShutdown(t *testing.T) {
 
     start := time.Now()
     httpReq, err := http.NewRequest(http.MethodPost, "http://127.0.0.1:8282/webhooks", strings.NewReader("some payload"))
-    require.NoError(t, err)
+    if err != nil {
+        t.Errorf("failed creating request: %s", err.Error())
+        assert.NoError(t, server.Close(), "failed closing server")
+        return
+    }
 
     resp, err := http.DefaultClient.Do(httpReq)
-    require.NoError(t, err)
+    if err != nil {
+        t.Errorf("request failed: %s", err.Error())
+        assert.NoError(t, server.Close(), "failed closing server")
+        return
+    }
+
+    err = resp.Body.Close()
+    if err != nil {
+        t.Errorf("failed closing response body: %s", err.Error())
+        assert.NoError(t, server.Close(), "failed closing server")
+        return
+    }
+
     elapsed := time.Since(start)
 
     assert.Equal(t, http.StatusCreated, resp.StatusCode)
     assert.GreaterOrEqual(t, elapsed, messageProcessingDelay)
-
-    err = server.Close()
-    require.NoError(t, err)
 
     <-ctx.Done()
     assert.ErrorIs(t, ctx.Err(), context.Canceled)

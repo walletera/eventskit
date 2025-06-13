@@ -1,5 +1,5 @@
 test-all:
-	go test --tags=rabbitmq_client_test,eventstoredb_test -v ./...
+	go test -count=1 -v --tags=rabbitmq_client_test,eventstoredb_test ./...
 
 test-eventstoredb:
-	go test --tags=eventstoredb_test -v ./eventstoredb
+	go test -count=1 -v --tags=eventstoredb_test ./eventstoredb
