@@ -55,7 +55,7 @@ func TestNackRetries(t *testing.T) {
     require.EqualValues(t, 0, info.Stats.ParkedMessagesCount)
 
     // event can be appended
-    werr := db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
+    _, werr := db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
     require.NoError(t, werr)
 
     msg, err := waitForMessageWithTimeout(t, messagesCh, 2*time.Second)
@@ -117,5 +117,4 @@ func waitForMessageWithTimeout(t *testing.T, messagesCh <-chan messages.Message,
     case <-timeout:
         return messages.Message{}, fmt.Errorf("timeout waiting message")
     }
-    return messages.Message{}, nil
 }

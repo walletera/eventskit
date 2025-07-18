@@ -7,6 +7,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	time "time"
+
 	werrors "github.com/walletera/werrors"
 )
 
@@ -72,6 +74,51 @@ func (_c *MockEvent_Accept_Call[Handler]) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// AggregateVersion provides a mock function with given fields:
+func (_m *MockEvent[Handler]) AggregateVersion() uint64 {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for AggregateVersion")
+	}
+
+	var r0 uint64
+	if rf, ok := ret.Get(0).(func() uint64); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(uint64)
+	}
+
+	return r0
+}
+
+// MockEvent_AggregateVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AggregateVersion'
+type MockEvent_AggregateVersion_Call[Handler interface{}] struct {
+	*mock.Call
+}
+
+// AggregateVersion is a helper method to define mock.On call
+func (_e *MockEvent_Expecter[Handler]) AggregateVersion() *MockEvent_AggregateVersion_Call[Handler] {
+	return &MockEvent_AggregateVersion_Call[Handler]{Call: _e.mock.On("AggregateVersion")}
+}
+
+func (_c *MockEvent_AggregateVersion_Call[Handler]) Run(run func()) *MockEvent_AggregateVersion_Call[Handler] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockEvent_AggregateVersion_Call[Handler]) Return(_a0 uint64) *MockEvent_AggregateVersion_Call[Handler] {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockEvent_AggregateVersion_Call[Handler]) RunAndReturn(run func() uint64) *MockEvent_AggregateVersion_Call[Handler] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CorrelationID provides a mock function with given fields:
 func (_m *MockEvent[Handler]) CorrelationID() string {
 	ret := _m.Called()
@@ -113,6 +160,51 @@ func (_c *MockEvent_CorrelationID_Call[Handler]) Return(_a0 string) *MockEvent_C
 }
 
 func (_c *MockEvent_CorrelationID_Call[Handler]) RunAndReturn(run func() string) *MockEvent_CorrelationID_Call[Handler] {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CreatedAt provides a mock function with given fields:
+func (_m *MockEvent[Handler]) CreatedAt() time.Time {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreatedAt")
+	}
+
+	var r0 time.Time
+	if rf, ok := ret.Get(0).(func() time.Time); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(time.Time)
+	}
+
+	return r0
+}
+
+// MockEvent_CreatedAt_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreatedAt'
+type MockEvent_CreatedAt_Call[Handler interface{}] struct {
+	*mock.Call
+}
+
+// CreatedAt is a helper method to define mock.On call
+func (_e *MockEvent_Expecter[Handler]) CreatedAt() *MockEvent_CreatedAt_Call[Handler] {
+	return &MockEvent_CreatedAt_Call[Handler]{Call: _e.mock.On("CreatedAt")}
+}
+
+func (_c *MockEvent_CreatedAt_Call[Handler]) Run(run func()) *MockEvent_CreatedAt_Call[Handler] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockEvent_CreatedAt_Call[Handler]) Return(_a0 time.Time) *MockEvent_CreatedAt_Call[Handler] {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockEvent_CreatedAt_Call[Handler]) RunAndReturn(run func() time.Time) *MockEvent_CreatedAt_Call[Handler] {
 	_c.Call.Return(run)
 	return _c
 }

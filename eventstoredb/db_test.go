@@ -33,12 +33,13 @@ func TestAppendReadEvents(t *testing.T) {
     eventDataMock.On("Type").Return("TestEventType")
 
     // event can be appended
-    werr := db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
+    nextExpectedVersion, werr := db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
     require.NoError(t, werr)
+    require.Equal(t, uint64(0), nextExpectedVersion)
 
     // try to append again specifying eventsourcing.ExpectedAggregateVersion{IsNew: true}
     // should result in a ResourceAlreadyExist error
-    werr = db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
+    _, werr = db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
     require.Equal(t, werrors.ResourceAlreadyExistErrorCode, werr.Code())
 
     // event can be read
@@ -48,11 +49,14 @@ func TestAppendReadEvents(t *testing.T) {
     require.Equal(t, rawEvent, retrievedEvents[0].RawEvent)
     require.Equal(t, uint64(0), retrievedEvents[0].AggregateVersion)
 
-    // new event can be appended to the stream with correct eventsourcing.ExpectedAggregateVersion
-    werr = db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{Version: 0}, eventDataMock)
+    // a new event can be appended to the stream with correct eventsourcing.ExpectedAggregateVersion
+    nextExpectedVersion, werr = db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{Version: 0}, eventDataMock)
     require.NoError(t, werr)
 
-    // try to append new event with wrong version result in a werrors.WrongAggregateVersionErrorCode error
-    werr = db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{Version: 0}, eventDataMock)
+    // the next expected aggregate version is previous versions + 1 because we appended 1 event
+    require.Equal(t, uint64(1), nextExpectedVersion)
+
+    // try to append a new event with a wrong version result in a werrors.WrongAggregateVersionErrorCode error
+    _, werr = db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{Version: 0}, eventDataMock)
     require.Equal(t, werrors.WrongResourceVersionErrorCode, werr.Code())
 }
