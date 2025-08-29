@@ -11,18 +11,30 @@ import (
     "github.com/walletera/werrors"
 )
 
-// TODO check if there is a way to read all events from a stream
-// maybe reading page by page
-const readEventsMaxCount = 1000000
+const defaultReadEventsPageSize = 100
 
 type DB struct {
-    client *esdb.Client
+    client             *esdb.Client
+    readEventsPageSize int
 }
 
-func NewDB(client *esdb.Client) *DB {
-    return &DB{
-        client: client,
+type Config func(*DB)
+
+func WithReadEventsPageSize(count int) func(db *DB) {
+    return func(db *DB) {
+        db.readEventsPageSize = count
     }
+}
+
+func NewDB(client *esdb.Client, configs ...Config) *DB {
+    db := &DB{
+        client:             client,
+        readEventsPageSize: defaultReadEventsPageSize,
+    }
+    for _, config := range configs {
+        config(db)
+    }
+    return db
 }
 
 func (db *DB) AppendEvents(ctx context.Context, streamName string, expectedAggregateVersion eventsourcing.ExpectedAggregateVersion, events ...events.EventData) (uint64, werrors.WError) {
@@ -59,11 +71,37 @@ func (db *DB) AppendEvents(ctx context.Context, streamName string, expectedAggre
 }
 
 func (db *DB) ReadEvents(ctx context.Context, streamName string) ([]eventsourcing.RetrievedEvent, werrors.WError) {
-    stream, err := db.client.ReadStream(ctx, streamName, esdb.ReadStreamOptions{
-        Direction:      esdb.Forwards,
-        From:           esdb.Start{},
-        ResolveLinkTos: true,
-    }, readEventsMaxCount)
+    retrievedEventsPage, err := db.readEventsFrom(ctx, streamName, esdb.Start{})
+    if err != nil {
+        return nil, err
+    }
+
+    allRetrievedStreamEvents := retrievedEventsPage
+
+    for len(retrievedEventsPage) == db.readEventsPageSize {
+        lastRetrievedEvent := retrievedEventsPage[len(retrievedEventsPage)-1]
+        nextReadEventPosition := esdb.StreamRevision{Value: lastRetrievedEvent.AggregateVersion + 1}
+        retrievedEventsPage, err = db.readEventsFrom(ctx, streamName, nextReadEventPosition)
+        if err != nil {
+            return nil, err
+        }
+        allRetrievedStreamEvents = append(allRetrievedStreamEvents, retrievedEventsPage...)
+    }
+
+    return allRetrievedStreamEvents, nil
+}
+
+func (db *DB) readEventsFrom(ctx context.Context, streamName string, from esdb.StreamPosition) ([]eventsourcing.RetrievedEvent, werrors.WError) {
+    stream, err := db.client.ReadStream(
+        ctx,
+        streamName,
+        esdb.ReadStreamOptions{
+            Direction:      esdb.Forwards,
+            From:           from,
+            ResolveLinkTos: true,
+        },
+        uint64(db.readEventsPageSize),
+    )
 
     if err != nil {
         return nil, mapReadErrorToWalleteraError(err)

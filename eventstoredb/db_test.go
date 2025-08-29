@@ -4,6 +4,8 @@ package eventstoredb
 
 import (
     "context"
+    "fmt"
+    "math/rand"
     "testing"
 
     "github.com/EventStore/EventStore-Client-Go/v4/esdb"
@@ -13,8 +15,8 @@ import (
     "github.com/walletera/werrors"
 )
 
-func TestAppendReadEvents(t *testing.T) {
-    const streamName = "testStream"
+func TestDB_AppendReadEvents(t *testing.T) {
+    streamName := fmt.Sprintf("testStream-%d", rand.Int())
 
     client, err := GetESDBClient("esdb://localhost:2113?tls=false")
     require.NoError(t, err)
@@ -59,4 +61,41 @@ func TestAppendReadEvents(t *testing.T) {
     // try to append a new event with a wrong version result in a werrors.WrongAggregateVersionErrorCode error
     _, werr = db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{Version: 0}, eventDataMock)
     require.Equal(t, werrors.WrongResourceVersionErrorCode, werr.Code())
+}
+
+func TestDB_ReadEventsInPages(t *testing.T) {
+    streamName := fmt.Sprintf("testStream-%d", rand.Int())
+
+    client, err := GetESDBClient("esdb://localhost:2113?tls=false")
+    require.NoError(t, err)
+
+    ctx, _ := context.WithTimeout(context.Background(), testTimeout)
+
+    t.Cleanup(func() {
+        _, deleteStreamErr := client.DeleteStream(ctx, streamName, esdb.DeleteStreamOptions{})
+        require.NoError(t, deleteStreamErr)
+    })
+
+    db := NewDB(client, WithReadEventsPageSize(10))
+
+    eventDataMock := &events.MockEventData{}
+    rawEvent := []byte(`{"thisIsA":"rawTestEvent"}`)
+    eventDataMock.On("Serialize").Return(rawEvent, nil)
+    eventDataMock.On("Type").Return("TestEventType")
+
+    nextExpectedVersion, werr := db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{IsNew: true}, eventDataMock)
+    require.NoError(t, werr)
+
+    for i := 1; i < 100; i++ {
+        nextExpectedVersion, werr = db.AppendEvents(ctx, streamName, eventsourcing.ExpectedAggregateVersion{Version: nextExpectedVersion}, eventDataMock)
+        require.NoError(t, werr)
+    }
+
+    retrievedEvents, err := db.ReadEvents(ctx, streamName)
+    require.NoError(t, err)
+    require.Len(t, retrievedEvents, 100)
+    for i := 0; i < 100; i++ {
+        require.Equal(t, rawEvent, retrievedEvents[i].RawEvent)
+        require.Equal(t, uint64(i), retrievedEvents[i].AggregateVersion)
+    }
 }
