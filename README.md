@@ -1,5 +1,5 @@
 # Eventskit
-[![Go](https://github.com/walletera/eventskit/actions/workflows/go.yml/badge.svg)](https://github.com/walletera/eventskit/actions/workflows/go.yml)
+[![CI](https://github.com/walletera/eventskit/actions/workflows/ci.yml/badge.svg)](https://github.com/walletera/eventskit/actions/workflows/ci.yml)
 
 **Eventskit** is a modular library for building robust, event-driven systems in Go. It is designed to be both lightweight and highly extensible, making it a great fit for microservices and distributed architectures.
 
