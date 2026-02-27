@@ -35,12 +35,10 @@ func TestNackRetries(t *testing.T) {
     eventDataMock.On("Serialize").Return(rawEvent, nil)
     eventDataMock.On("Type").Return("TestEventType")
 
-    maxRetries := 3
-    subscriptionSettings := kurrentdb.SubscriptionSettingsDefault()
-    subscriptionSettings.ResolveLinkTos = true
-    subscriptionSettings.MaxRetryCount = int32(maxRetries)
+    // esdb default
+    maxRetries := 10
 
-    err = CreatePersistentSubscription(eventStoreDBUrl, streamName, "testGroup", subscriptionSettings)
+    err = CreatePersistentSubscription(eventStoreDBUrl, streamName, "testGroup")
     require.NoError(t, err)
 
     consumer, err := NewMessagesConsumer(eventStoreDBUrl, streamName, "testGroup")
