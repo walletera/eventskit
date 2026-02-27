@@ -8,11 +8,14 @@ import (
     "github.com/kurrent-io/KurrentDB-Client-Go/kurrentdb"
 )
 
-func CreatePersistentSubscription(connectionString string, streamName string, groupName string, subscriptionSettings kurrentdb.PersistentSubscriptionSettings) error {
+func CreatePersistentSubscription(connectionString string, streamName string, groupName string) error {
     esdbClient, err := GetESDBClient(connectionString)
     if err != nil {
         return err
     }
+
+    subscriptionSettings := kurrentdb.SubscriptionSettingsDefault()
+    subscriptionSettings.ResolveLinkTos = true
 
     err = esdbClient.CreatePersistentSubscription(
         context.Background(),
