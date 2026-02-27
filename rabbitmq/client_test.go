@@ -20,12 +20,21 @@ import (
     "github.com/testcontainers/testcontainers-go/wait"
 )
 
-func TestRabbitMQClientWithDefaults(t *testing.T) {
-    ctx := context.Background()
+const (
+    containerStartTimeout = 20 * time.Second
+)
+
+func TestMain(m *testing.M) {
+    ctx, cancel := context.WithTimeout(context.Background(), containerStartTimeout)
+    defer cancel()
 
     stopRabbitMQ := runRabbitMQ(ctx)
     defer stopRabbitMQ(ctx)
 
+    m.Run()
+}
+
+func TestRabbitMQClientWithDefaults(t *testing.T) {
     consumer, err := NewClient()
     if err != nil {
         t.Error(err.Error())
@@ -56,7 +65,7 @@ func TestRabbitMQClientWithDefaults(t *testing.T) {
     }
     defer publisher.Close()
 
-    err = publisher.Publish(ctx, event, events.RoutingInfo{
+    err = publisher.Publish(context.Background(), event, events.RoutingInfo{
         Topic:      "",
         RoutingKey: consumer.QueueName(),
     })
@@ -86,11 +95,6 @@ func TestRabbitMQClientWithDefaults(t *testing.T) {
 }
 
 func TestRabbitMQClientWithOptions(t *testing.T) {
-    ctx := context.Background()
-    stopRabbitMQ := runRabbitMQ(ctx)
-
-    defer stopRabbitMQ(ctx)
-
     const testRoutingKey = "test.routing.key"
 
     consumer, err := NewClient(
@@ -133,7 +137,7 @@ func TestRabbitMQClientWithOptions(t *testing.T) {
     }
     defer publisher.Close()
 
-    err = publisher.Publish(ctx, event, events.RoutingInfo{
+    err = publisher.Publish(context.Background(), event, events.RoutingInfo{
         Topic:      "test-exchange",
         RoutingKey: testRoutingKey,
     })
@@ -163,11 +167,6 @@ func TestRabbitMQClientWithOptions(t *testing.T) {
 }
 
 func TestRabbitMQClientWithOptionsButEmptyExchangeType(t *testing.T) {
-    ctx := context.Background()
-    stopRabbitMQ := runRabbitMQ(ctx)
-
-    defer stopRabbitMQ(ctx)
-
     const testRoutingKey = "test.routing.key"
 
     _, err := NewClient(
@@ -179,11 +178,6 @@ func TestRabbitMQClientWithOptionsButEmptyExchangeType(t *testing.T) {
 }
 
 func TestRabbitMQClientWithLoad(t *testing.T) {
-    ctx := context.Background()
-    stopRabbitMQ := runRabbitMQ(ctx)
-
-    defer stopRabbitMQ(ctx)
-
     const testRoutingKey = "test.routing.key"
 
     consumer, err := NewClient(
@@ -228,7 +222,7 @@ func TestRabbitMQClientWithLoad(t *testing.T) {
 
     n := 1000
     for i := 0; i < n; i++ {
-        err = publisher.Publish(ctx, event, events.RoutingInfo{
+        err = publisher.Publish(context.Background(), event, events.RoutingInfo{
             Topic:      "test-exchange",
             RoutingKey: testRoutingKey,
         })
@@ -243,11 +237,6 @@ func TestRabbitMQClientWithLoad(t *testing.T) {
 }
 
 func TestRabbitMQClientNackRetries(t *testing.T) {
-    ctx := context.Background()
-    stopRabbitMQ := runRabbitMQ(ctx)
-
-    defer stopRabbitMQ(ctx)
-
     const testRoutingKey = "test.routing.key"
 
     consumer, err := NewClient(
@@ -290,7 +279,7 @@ func TestRabbitMQClientNackRetries(t *testing.T) {
     }
     defer publisher.Close()
 
-    err = publisher.Publish(ctx, event, events.RoutingInfo{
+    err = publisher.Publish(context.Background(), event, events.RoutingInfo{
         Topic:      "test-exchange",
         RoutingKey: testRoutingKey,
     })
