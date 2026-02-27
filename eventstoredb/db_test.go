@@ -8,7 +8,7 @@ import (
     "math/rand"
     "testing"
 
-    "github.com/EventStore/EventStore-Client-Go/v4/esdb"
+    "github.com/kurrent-io/KurrentDB-Client-Go/kurrentdb"
     "github.com/stretchr/testify/require"
     "github.com/walletera/eventskit/eventsourcing"
     "github.com/walletera/eventskit/mocks/github.com/walletera/eventskit/events"
@@ -24,7 +24,7 @@ func TestDB_AppendReadEvents(t *testing.T) {
     ctx, _ := context.WithTimeout(context.Background(), testTimeout)
 
     t.Cleanup(func() {
-        _, deleteStreamErr := client.DeleteStream(ctx, streamName, esdb.DeleteStreamOptions{})
+        _, deleteStreamErr := client.DeleteStream(ctx, streamName, kurrentdb.DeleteStreamOptions{})
         require.NoError(t, deleteStreamErr)
     })
 
@@ -72,7 +72,7 @@ func TestDB_ReadEventsInPages(t *testing.T) {
     ctx, _ := context.WithTimeout(context.Background(), testTimeout)
 
     t.Cleanup(func() {
-        _, deleteStreamErr := client.DeleteStream(ctx, streamName, esdb.DeleteStreamOptions{})
+        _, deleteStreamErr := client.DeleteStream(ctx, streamName, kurrentdb.DeleteStreamOptions{})
         require.NoError(t, deleteStreamErr)
     })
 

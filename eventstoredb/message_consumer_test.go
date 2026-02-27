@@ -8,7 +8,7 @@ import (
     "testing"
     "time"
 
-    "github.com/EventStore/EventStore-Client-Go/v4/esdb"
+    "github.com/kurrent-io/KurrentDB-Client-Go/kurrentdb"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
     "github.com/walletera/eventskit/eventsourcing"
@@ -25,7 +25,7 @@ func TestNackRetries(t *testing.T) {
     ctx, _ := context.WithTimeout(context.Background(), testTimeout)
 
     t.Cleanup(func() {
-        _, deleteStreamErr := client.DeleteStream(ctx, streamName, esdb.DeleteStreamOptions{})
+        _, deleteStreamErr := client.DeleteStream(ctx, streamName, kurrentdb.DeleteStreamOptions{})
         require.NoError(t, deleteStreamErr)
     })
 
@@ -36,7 +36,7 @@ func TestNackRetries(t *testing.T) {
     eventDataMock.On("Type").Return("TestEventType")
 
     maxRetries := 3
-    subscriptionSettings := esdb.SubscriptionSettingsDefault()
+    subscriptionSettings := kurrentdb.SubscriptionSettingsDefault()
     subscriptionSettings.ResolveLinkTos = true
     subscriptionSettings.MaxRetryCount = int32(maxRetries)
 
@@ -48,7 +48,7 @@ func TestNackRetries(t *testing.T) {
     messagesCh, err := consumer.Consume()
     require.NoError(t, err)
 
-    info, err := db.client.GetPersistentSubscriptionInfo(ctx, streamName, "testGroup", esdb.GetPersistentSubscriptionOptions{})
+    info, err := db.client.GetPersistentSubscriptionInfo(ctx, streamName, "testGroup", kurrentdb.GetPersistentSubscriptionOptions{})
     require.NoError(t, err)
 
     // parked messages count is 0
@@ -80,7 +80,7 @@ func TestNackRetries(t *testing.T) {
     // let's give a moment to the stats to be updated
     time.Sleep(100 * time.Millisecond)
 
-    info, err = db.client.GetPersistentSubscriptionInfo(ctx, streamName, "testGroup", esdb.GetPersistentSubscriptionOptions{})
+    info, err = db.client.GetPersistentSubscriptionInfo(ctx, streamName, "testGroup", kurrentdb.GetPersistentSubscriptionOptions{})
     require.NoError(t, err)
     require.EqualValues(t, 1, info.Stats.ParkedMessagesCount, "the message was not parked")
 
@@ -90,7 +90,7 @@ func TestNackRetries(t *testing.T) {
     require.Equal(t, rawEvent, parkedEvents[0].RawEvent)
 
     // replay parked message
-    err = db.client.ReplayParkedMessages(ctx, streamName, "testGroup", esdb.ReplayParkedMessagesOptions{})
+    err = db.client.ReplayParkedMessages(ctx, streamName, "testGroup", kurrentdb.ReplayParkedMessagesOptions{})
     require.NoError(t, err)
 
     msgReplayed, err := waitForMessageWithTimeout(t, messagesCh, 2*time.Second)
@@ -100,7 +100,7 @@ func TestNackRetries(t *testing.T) {
     // let's give a moment to the stats to be updated
     time.Sleep(100 * time.Millisecond)
 
-    info, err = db.client.GetPersistentSubscriptionInfo(ctx, streamName, "testGroup", esdb.GetPersistentSubscriptionOptions{})
+    info, err = db.client.GetPersistentSubscriptionInfo(ctx, streamName, "testGroup", kurrentdb.GetPersistentSubscriptionOptions{})
     require.NoError(t, err)
     require.EqualValues(t, 0, info.Stats.ParkedMessagesCount, "the message is still parked")
 }
